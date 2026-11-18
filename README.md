@@ -3,7 +3,8 @@
 # lunchbot
 
 [![CI](https://github.com/jesmith0/lunchbot/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jesmith0/lunchbot/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/python-2.7%20%7C%203.12-blue?logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue?logo=python&logoColor=white)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 ![Tested with pytest](https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white)
 ![Flask](https://img.shields.io/badge/flask-backend-000000?logo=flask&logoColor=white)
 ![Last commit](https://img.shields.io/github/last-commit/jesmith0/lunchbot)
@@ -47,12 +48,15 @@ The code reads data files from `/var/www/html/lunchbot/`. It reads the room noti
 
 ## Development
 
+Requires Python 3.12 or newer.
+
 ```sh
-pip install -r requirements-dev.txt
-python -m pytest -v tests
+pip install -e ".[dev]"
+ruff check . && ruff format --check .
+python -m pytest
 ```
 
-On every push and pull request, CI fails if merge conflict markers are present, checks that all sources compile, and runs the test suite.
+On every push and pull request, CI fails if merge conflict markers are present, runs ruff lint and format checks, and runs the test suite on Python 3.12, 3.13 and 3.14.
 
 ## License
 

@@ -1,11 +1,8 @@
 import os
-import sys
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import lunchbot  # noqa: E402
+import lunchbot
 
 # Module-level "__name" functions aren't name-mangled when accessed outside a class.
 get_random_item = getattr(lunchbot, "__get_random_item")
@@ -36,9 +33,7 @@ def env(tmp_path, monkeypatch):
         monkeypatch.setattr(lunchbot, const, str(p))
 
     posts = []
-    monkeypatch.setattr(
-        lunchbot.requests, "post", lambda url, json: posts.append((url, json))
-    )
+    monkeypatch.setattr(lunchbot.requests, "post", lambda url, json: posts.append((url, json)))
 
     class Env:
         pass
@@ -183,6 +178,6 @@ def test_bare_command_prints_general_help(env):
 @pytest.mark.parametrize("command", ["(upvote)", "(downvote)"])
 def test_emoticon_vote_aliases_print_help(env, command):
     # #22: these aliases were never reachable; they get the general help text.
-    msg = lunchbot.process_message("/lunchbot %s chipotle" % command, "u", "Rogue One")
+    msg = lunchbot.process_message(f"/lunchbot {command} chipotle", "u", "Rogue One")
     assert msg.startswith("Proper usage: /lunchbot [command (")
     assert "CHIPOTLE, 5" in env.read("REST_PATH")
