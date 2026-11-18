@@ -14,6 +14,8 @@ dependencies = [
 dev = [
     "pytest>=8",
     "ruff>=0.15",
+    "mypy>=1.15",
+    "types-requests",
 ]
 
 [build-system]
@@ -34,3 +36,8 @@ line-length = 100
 [tool.ruff.lint]
 # pycodestyle, pyflakes, isort, pyupgrade, bugbear
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["lunchbot.py", "backend.py", "disable_veto.py"]
+strict = true

@@ -48,15 +48,19 @@ The code reads data files from `/var/www/html/lunchbot/`. It reads the room noti
 
 ## Development
 
-Requires Python 3.12 or newer.
+Requires Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
 
 ```sh
-pip install -e ".[dev]"
-ruff check . && ruff format --check .
-python -m pytest
+uv sync --extra dev        # create .venv from uv.lock
+uv run pytest              # tests
+uv run ruff check .        # lint
+uv run ruff format .       # format
+uv run mypy                # type check (strict)
 ```
 
-On every push and pull request, CI fails if merge conflict markers are present, runs ruff lint and format checks, and runs the test suite on Python 3.12, 3.13 and 3.14.
+After changing dependencies in `pyproject.toml`, run `uv lock` and commit `uv.lock`.
+
+On every push and pull request, CI fails if merge conflict markers are present, runs ruff lint and format checks and strict mypy, and runs the tests on Python 3.12, 3.13 and 3.14.
 
 ## License
 

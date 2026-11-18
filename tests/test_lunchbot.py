@@ -4,10 +4,9 @@ import pytest
 
 import lunchbot
 
-# Module-level "__name" functions aren't name-mangled when accessed outside a class.
-get_random_item = getattr(lunchbot, "__get_random_item")
-post_lunch = getattr(lunchbot, "__post_lunch")
-post_to_hipchat = getattr(lunchbot, "__post_to_hipchat")
+get_random_item = lunchbot._get_random_item
+post_lunch = lunchbot._post_lunch
+post_to_hipchat = lunchbot._post_to_hipchat
 
 ROOM_URLS = {
     "TFA_URL_PATH": "https://example.test/tfa",
@@ -181,3 +180,16 @@ def test_emoticon_vote_aliases_print_help(env, command):
     msg = lunchbot.process_message(f"/lunchbot {command} chipotle", "u", "Rogue One")
     assert msg.startswith("Proper usage: /lunchbot [command (")
     assert "CHIPOTLE, 5" in env.read("REST_PATH")
+
+
+def test_remove_after_failed_read_keeps_file(env, monkeypatch):
+    # A failed read must never lead to rewriting (and wiping) the list.
+    monkeypatch.setattr(lunchbot, "_get_lines", lambda path: None)
+    lunchbot._remove_item(lunchbot.REST_PATH, "chipotle")
+    assert env.read("REST_PATH") == "CHIPOTLE, 5\nEVOS, 1\n"
+
+
+def test_file_errors_are_logged(env, caplog):
+    assert lunchbot._get_lines("/nonexistent/lunchbot.txt") is None
+    assert "Could not read file /nonexistent/lunchbot.txt" in caplog.text
+    assert "FileNotFoundError" in caplog.text
