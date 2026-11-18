@@ -46,6 +46,20 @@ Send these in a HipChat room with the bot installed:
 
 The code reads data files from `/var/www/html/lunchbot/`. It reads the room notification URLs from the `*_URL.txt` files listed at the top of `lunchbot.py`.
 
+## History
+
+lunchbot started in July 2016 as a side project at work. Every day the same two questions came up: where are we eating, and who's driving? [@jesmith0](https://github.com/jesmith0) wrote the first version in a day, and the office's resident "tech support", [@jamesrwaugh](https://github.com/jamesrwaugh) and [@masonjeffers](https://github.com/masonjeffers), helped shape it from there.
+
+It was a humble project, but it was fun, it gave us something to build together, and it solved a problem we all actually had. Over the next few months it picked up:
+
+- **Weighted picks and voting.** Favorite restaurants came up more often, and anyone could vote a restaurant up or down.
+- **A remove command and simpler command parsing,** from @jamesrwaugh in the project's first pull requests.
+- **The "gross" veto.** Three votes and lunch gets rerolled.
+- **A weekly rhythm.** Tuesdays were for "knowledge", Thursdays for the logic puzzle group, and some Fridays the bot sent everyone to the tech talk instead.
+- **A request for @mentions** from @masonjeffers ([#3](https://github.com/jesmith0/lunchbot/issues/3)), so the day's driver would have "no excuse not to drive me to lunch".
+
+The bot lived in HipChat, in rooms named *The Force Awakens* and *Rogue One*, until HipChat was shut down in 2019. In 2026 the repo was dusted off: leftover merge conflicts resolved, tests and CI added, and the code moved to modern Python. The [open issues](https://github.com/jesmith0/lunchbot/issues) track bringing it to Slack, Discord and Teams.
+
 ## Development
 
 Requires Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
