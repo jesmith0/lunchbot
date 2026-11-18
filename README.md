@@ -38,13 +38,22 @@ Send these in a HipChat room with the bot installed:
 
 | File | Purpose |
 | --- | --- |
-| `lunchbot.py` | Command handling, weighted picks, HipChat posting |
-| `backend.py` | Flask app that receives HipChat webhooks at `/lunchbot` |
+| `lunchbot.py` | Command handling, weighted picks, posting to the chat webhook |
+| `config.py` | Settings read from environment variables |
+| `backend.py` | Flask app that receives chat webhooks at `/lunchbot` |
 | `lunchbot.wsgi` | mod_wsgi entry point |
-| `restaurants.txt`, `drivers.txt` | Lists in `NAME, WEIGHT` format |
-| `vetos.txt` | Current veto votes, or `DISABLED` |
+| `data/restaurants.txt`, `data/drivers.txt` | Lists in `NAME, WEIGHT` format |
+| `data/vetos.txt` | Current veto votes, or `DISABLED` |
 
-The code reads data files from `/var/www/html/lunchbot/`. It reads the room notification URLs from the `*_URL.txt` files listed at the top of `lunchbot.py`.
+## Configuration
+
+All settings come from environment variables. Copy `.env.example` to `.env`, fill it in, and run with `uv run --env-file .env ...`. Never commit `.env`: webhook URLs contain auth tokens.
+
+| Variable | Purpose |
+| --- | --- |
+| `LUNCHBOT_WEBHOOK_URL` | Webhook the bot posts to. Required before the bot can post anything. |
+| `LUNCHBOT_ROOM_WEBHOOKS` | Optional JSON object of room name → webhook URL, for rooms that post somewhere else |
+| `LUNCHBOT_DATA_DIR` | Folder holding the list files. Defaults to `data/` in this repo. |
 
 ## History
 

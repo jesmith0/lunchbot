@@ -5,3 +5,7 @@ __pycache__/
 build/
 .ruff_cache/
 .venv/
+
+# local config and secrets
+.env
+*_URL.txt

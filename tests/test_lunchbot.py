@@ -3,15 +3,16 @@ import os
 import pytest
 
 import lunchbot
+from config import Config
 
 get_random_item = lunchbot._get_random_item
 post_lunch = lunchbot._post_lunch
 post_to_hipchat = lunchbot._post_to_hipchat
 
+DEFAULT_URL = "https://example.test/default"
 ROOM_URLS = {
-    "TFA_URL_PATH": "https://example.test/tfa",
-    "SANDBOX_URL_PATH": "https://example.test/sandbox",
-    "RO_URL_PATH": "https://example.test/rogue-one",
+    "The Force Awakens": "https://example.test/tfa",
+    "sandy lunchbox": "https://example.test/sandbox",
 }
 
 
@@ -25,11 +26,12 @@ def env(tmp_path, monkeypatch):
         "LAST_DRIVER_PATH": "",
         "LAST_REST_PATH": "",
     }
-    files.update({k: v + "\n" for k, v in ROOM_URLS.items()})
     for const, content in files.items():
         p = tmp_path / const.lower()
         p.write_text(content)
         monkeypatch.setattr(lunchbot, const, str(p))
+    config = Config(data_dir=tmp_path, webhook_url=DEFAULT_URL, room_webhooks=ROOM_URLS)
+    monkeypatch.setattr(lunchbot, "CONFIG", config)
 
     posts = []
     monkeypatch.setattr(lunchbot.requests, "post", lambda url, json: posts.append((url, json)))
@@ -144,10 +146,10 @@ def test_post_lunch_picks_fresh_restaurant_each_call(env):
 @pytest.mark.parametrize(
     "room, url",
     [
-        ("The Force Awakens", ROOM_URLS["TFA_URL_PATH"]),
-        ("sandy lunchbox", ROOM_URLS["SANDBOX_URL_PATH"]),
-        ("Rogue One", ROOM_URLS["RO_URL_PATH"]),
-        ("Some Other Room", ROOM_URLS["RO_URL_PATH"]),
+        ("The Force Awakens", ROOM_URLS["The Force Awakens"]),
+        ("sandy lunchbox", ROOM_URLS["sandy lunchbox"]),
+        ("Rogue One", DEFAULT_URL),
+        ("Some Other Room", DEFAULT_URL),
     ],
 )
 def test_post_to_hipchat_routes_by_room(env, room, url):
@@ -193,3 +195,19 @@ def test_file_errors_are_logged(env, caplog):
     assert lunchbot._get_lines("/nonexistent/lunchbot.txt") is None
     assert "Could not read file /nonexistent/lunchbot.txt" in caplog.text
     assert "FileNotFoundError" in caplog.text
+
+
+def test_post_without_webhook_configured_raises(env, monkeypatch):
+    from config import ConfigError
+
+    monkeypatch.setattr(lunchbot, "CONFIG", Config())
+    with pytest.raises(ConfigError, match="LUNCHBOT_WEBHOOK_URL"):
+        post_to_hipchat("Rogue One", "hi")
+    assert env.posts == []
+
+
+def test_bundled_data_files_parse():
+    # The seed lists shipped in data/ must load with the default config.
+    defaults = Config()
+    assert get_random_item(str(defaults.data_dir / "restaurants.txt"))
+    assert get_random_item(str(defaults.data_dir / "drivers.txt"))
