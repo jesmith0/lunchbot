@@ -34,6 +34,8 @@ class InvalidCommandError(Exception):
 ### PROCESS COMMAND FROM HIPCHAT 
 def process_message(msg, user, room):
 	msg_arr = msg.split(" ")
+	if len(msg_arr) < 2:
+		return __print_help(room)
 	command = msg_arr[1]
 	
 	try:
@@ -49,8 +51,8 @@ def process_message(msg, user, room):
 			return __add_command(msg_arr[2], ' '.join(msg_arr[3:]), room)
 		elif command == "remove":
 			return __remove_command(msg_arr[2], ' '.join(msg_arr[3:]), room)
-		elif (command in ["upvote", "(upvote)"]) or (command in ["downvote", "(downvote)"]):
-			vote_value = 1 if command in ["upvote", "(upvote)"] else -1
+		elif command in ["upvote", "downvote"]:
+			vote_value = 1 if command == "upvote" else -1
 			return __vote_command(' '.join(msg_arr[2:]), vote_value, room)
 		elif command == "gross":	
 			return __gross_command(user, room)
@@ -173,7 +175,7 @@ def __add_item(path, item):
 def __remove_item(path, item):
 	try:
 		item = item.lower().strip()
-		lines = [l for l in __get_lines(path) if not l.lower().startswith(item)]
+		lines = [l for l in __get_lines(path) if l.split(',')[0].strip().lower() != item]
 		__write_lines(path, lines)
 	except:
 		print("ERROR OPENING/APPENDING TO PATH IN __remove_item()\n")
