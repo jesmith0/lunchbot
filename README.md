@@ -7,6 +7,7 @@
 ![Tested with pytest](https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white)
 ![Flask](https://img.shields.io/badge/flask-backend-000000?logo=flask&logoColor=white)
 ![Last commit](https://img.shields.io/github/last-commit/jesmith0/lunchbot)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 A HipChat bot that picks where the team goes for lunch and who drives. Picks are weighted, and the team can vote restaurants up or down or veto a pick.
 
@@ -52,3 +53,7 @@ python -m pytest -v tests
 ```
 
 On every push and pull request, CI fails if merge conflict markers are present, checks that all sources compile, and runs the test suite.
+
+## License
+
+[MIT](LICENSE)
