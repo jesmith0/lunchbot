@@ -161,3 +161,28 @@ def test_post_to_hipchat_routes_by_room(env, room, url):
     assert env.posts == [
         (url, {"color": "gray", "message": "hi", "notify": False, "message_format": "text"})
     ]
+
+
+def test_remove_does_not_delete_items_sharing_a_prefix(env):
+    # Regression for #20: removing EVOS used to also delete EVOS GRILL.
+    with open(lunchbot.REST_PATH, "a") as f:
+        f.write("EVOS GRILL, 3\n")
+    lunchbot.process_message("/lunchbot remove restaurant evos", "u", "Rogue One")
+    contents = env.read("REST_PATH")
+    assert "EVOS GRILL, 3" in contents
+    assert "EVOS, 1" not in contents
+    assert "CHIPOTLE, 5" in contents
+
+
+def test_bare_command_prints_general_help(env):
+    # Regression for #21: "/lunchbot" alone used to raise IndexError (HTTP 500).
+    msg = lunchbot.process_message("/lunchbot", "u", "Rogue One")
+    assert msg.startswith("Proper usage: /lunchbot [command (")
+
+
+@pytest.mark.parametrize("command", ["(upvote)", "(downvote)"])
+def test_emoticon_vote_aliases_print_help(env, command):
+    # #22: these aliases were never reachable; they get the general help text.
+    msg = lunchbot.process_message("/lunchbot %s chipotle" % command, "u", "Rogue One")
+    assert msg.startswith("Proper usage: /lunchbot [command (")
+    assert "CHIPOTLE, 5" in env.read("REST_PATH")
