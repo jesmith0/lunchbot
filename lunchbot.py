@@ -5,16 +5,17 @@ from typing import TypedDict
 
 import requests
 
+from config import Config
+
 logger = logging.getLogger(__name__)
 
-REST_PATH = "/var/www/html/lunchbot/restaurants.txt"
-DRIVER_PATH = "/var/www/html/lunchbot/drivers.txt"
-VETO_PATH = "/var/www/html/lunchbot/vetos.txt"
-LAST_DRIVER_PATH = "/var/www/html/lunchbot/driver_last.txt"
-LAST_REST_PATH = "/var/www/html/lunchbot/restaurant_last.txt"
-SANDBOX_URL_PATH = "/var/www/html/lunchbot/SANDBOX_URL.txt"
-TFA_URL_PATH = "/home/ubuntu/PRIVATE/TFA_URL.txt"
-RO_URL_PATH = "/home/ubuntu/PRIVATE/RO_URL.txt"
+CONFIG = Config.from_env()
+
+REST_PATH = str(CONFIG.data_dir / "restaurants.txt")
+DRIVER_PATH = str(CONFIG.data_dir / "drivers.txt")
+VETO_PATH = str(CONFIG.data_dir / "vetos.txt")
+LAST_DRIVER_PATH = str(CONFIG.data_dir / "driver_last.txt")
+LAST_REST_PATH = str(CONFIG.data_dir / "restaurant_last.txt")
 
 # Command reference
 # list command requires 1 argument (list name)
@@ -312,19 +313,8 @@ def _post_to_hipchat(
     notify: bool = False,
     message_format: str = "text",
 ) -> str:
-    room_paths = {
-        "The Force Awakens": TFA_URL_PATH,
-        "sandy lunchbox": SANDBOX_URL_PATH,
-        "Rogue One": RO_URL_PATH,
-    }
-    url_path = room_paths.get(room, RO_URL_PATH)
-    lines = _get_lines(url_path)
-    if not lines:
-        raise OSError(f"no HipChat URL configured in {url_path}")
-    url = lines[0].rstrip()
-
     requests.post(
-        url,
+        CONFIG.webhook_for(room),
         json={
             "color": color,
             "message": message,

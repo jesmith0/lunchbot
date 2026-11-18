@@ -23,7 +23,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["lunchbot", "backend", "disable_veto"]
+py-modules = ["lunchbot", "backend", "disable_veto", "config"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -39,5 +39,5 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.mypy]
 python_version = "3.12"
-files = ["lunchbot.py", "backend.py", "disable_veto.py"]
+files = ["lunchbot.py", "backend.py", "disable_veto.py", "config.py"]
 strict = true
