@@ -115,8 +115,8 @@ def __get_lines(path):
 			lines = f.readlines()
 			return lines
 	except Exception as e:
-		print "COULD NOT READ FILE IN __get_lines()", e.message
-		print "PATH: " + str(path) + "\n"
+		print("COULD NOT READ FILE IN __get_lines() " + str(e))
+		print("PATH: " + str(path) + "\n")
 		return None		
  
 #Write a list of lines to a file 
@@ -125,9 +125,9 @@ def __write_lines(path, lines):
 		with open(path, 'w') as f:
 			f.writelines(lines)
 	except Exception as e:
-		print "COULD NOT WRITE TO FILE IN __write_lines(): " + e.message
-		print "PATH : " + str(path) + "\n"
-		print "LINES: " + str(lines) + "\n"
+		print("COULD NOT WRITE TO FILE IN __write_lines(): " + str(e))
+		print("PATH : " + str(path) + "\n")
+		print("LINES: " + str(lines) + "\n")
 
 
 ### RETURNS TRUE IF FOUND, FALSE IF NOT OR ERROR
@@ -140,9 +140,9 @@ def __search_for_item(path, item):
 				if item.upper() == restaurant.upper():
 					return True
 	except:
-		print "COULD NOT OPEN FILE IN __search_for_item()\n"
-		print "PATH: " + str(path) + "\n"
-		print "ITEM: " + str(item) + "\n"
+		print("COULD NOT OPEN FILE IN __search_for_item()\n")
+		print("PATH: " + str(path) + "\n")
+		print("ITEM: " + str(item) + "\n")
 		return False
 
 ### ADD ITEM TO LIST
@@ -166,9 +166,9 @@ def __add_item(path, item):
 		with open(path, 'a') as f:
 			f.write((str(item) + ", 1").upper() + "\n")
 	except:
-		print "ERROR OPENING/APPENDING TO PATH IN __add_item()\n"
-		print "PATH: " + str(path) + "\n"
-		print "ITEM: " + str(item) + "\n"
+		print("ERROR OPENING/APPENDING TO PATH IN __add_item()\n")
+		print("PATH: " + str(path) + "\n")
+		print("ITEM: " + str(item) + "\n")
 		
 def __remove_item(path, item):
 	try:
@@ -176,9 +176,9 @@ def __remove_item(path, item):
 		lines = [l for l in __get_lines(path) if not l.lower().startswith(item)]
 		__write_lines(path, lines)
 	except:
-		print "ERROR OPENING/APPENDING TO PATH IN __remove_item()\n" 
-		print "PATH: " + str(path) + "\n"
-		print "ITEM: " + str(item) + "\n"		
+		print("ERROR OPENING/APPENDING TO PATH IN __remove_item()\n")
+		print("PATH: " + str(path) + "\n")
+		print("ITEM: " + str(item) + "\n")
 
 ### REMOVE ITEM FROM LIST
 def __remove_command(name, item, room):
@@ -203,23 +203,14 @@ def __gross_command(user, room):
 		return __post_to_hipchat(room, 'Voting disabled', 'purple')
 
 	# add user to list
-<<<<<<< HEAD
-	#if __search_for_item(path, user): msg  = 'You already voted!' #inform user they already voted
-	#else:
+	# duplicate-vote check intentionally disabled (see 1ce9aa7)
 	__add_item(path, user)
-	#msg = 'Every vote counts!' #add user
-=======
-	if __search_for_item(path, user): 
-		msg  = 'You already voted!' #inform user they already voted
-	else:
-		__add_item(path, user)
-		msg = 'Every vote counts!' #add user
->>>>>>> 1bfadc41a86fb549a68d40fbb49e1fec6a5c753e
+	msg = 'Every vote counts!'
 
 	# check if 3 or more people in list
 	if len(__get_lines(path)) >= 3:
 		__clear_file(path)
-		print "3 or more votes to skip"
+		print("3 or more votes to skip")
 		return __post_lunch(room)
 
 	return __post_to_hipchat(room, msg, 'purple')
@@ -227,8 +218,8 @@ def __gross_command(user, room):
 def __clear_file(path):
 	try: open(path, 'w').close()
 	except:
-		print "ERROR CLEARING FILE IN __clear_file()"
-		print "PATH: " + str(path) + "\n"
+		print("ERROR CLEARING FILE IN __clear_file()")
+		print("PATH: " + str(path) + "\n")
 
 ### POSTS PROPER USAGE MESSAGE TO HIPCHAT
 def __print_help(room, command = None):
@@ -300,26 +291,23 @@ def __get_random_item(path, last_item_file=None):
 ### POSTS MESSAGE TO HIPCHAT
 def __post_to_hipchat(room, message, color = "green", notify = False, message_format = "text"):
 
-<<<<<<< HEAD
-	url = ''
-	if room == 'The Force Awakens': url = __get_lines(TFA_URL_PATH)[0].rstrip()
-	elif room == 'sandy lunchbox': url = __get_lines(SANDBOX_URL_PATH)[0].rstrip()
-	elif room == 'Rogue One': url = __get_lines(RO_URL_PATH)[0].rstrip()
+	room_paths = {
+		'The Force Awakens': TFA_URL_PATH,
+		'sandy lunchbox': SANDBOX_URL_PATH,
+		'Rogue One': RO_URL_PATH,
+	}
+	url = __get_lines(room_paths.get(room, RO_URL_PATH))[0].rstrip()
 
-	url = __get_lines(RO_URL_PATH)[0].rstrip()
-	print url
-
-        r = requests.post(url, json={"color":color,"message":message,"notify":notify,"message_format":message_format})
-=======
-	url = __get_lines(TFA_URL_PATH if room == "The Force Awakens" else SANDBOX_URL_PATH)[0].rstrip()
-	
-	r = requests.post(url, json={"color":color,"message":message,"notify":notify,"message_format":message_format})
->>>>>>> 1bfadc41a86fb549a68d40fbb49e1fec6a5c753e
+	requests.post(url, json={"color":color,"message":message,"notify":notify,"message_format":message_format})
 
 	return message
 
 ### POSTS LUNCH RECOMMENDATION
-def __post_lunch(room, day = datetime.datetime.today().weekday(), rest = __get_random_item(REST_PATH, LAST_REST_PATH), driver = __get_random_item(DRIVER_PATH)):
+def __post_lunch(room, day = None, rest = None, driver = None):
+	# defaults are resolved per call; as default args they were evaluated once at import
+	if day is None: day = datetime.datetime.today().weekday()
+	if rest is None: rest = __get_random_item(REST_PATH, LAST_REST_PATH)
+	if driver is None: driver = __get_random_item(DRIVER_PATH)
 	msg = ""
 
 	# monday, wednesday, friday

@@ -45,7 +45,7 @@ def lunchbot():
 			user = json_dict['item']['message']['from']['name']
 			room = json_dict['item']['room']['name']
 
-		except ValueError as e: return "Invalid JSON in request : " + e.message, 400
+		except ValueError as e: return "Invalid JSON in request : " + str(e), 400
 
 		return process_message(msg, user, room)
 
