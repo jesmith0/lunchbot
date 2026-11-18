@@ -7,8 +7,8 @@ Nothing here talks to a chat service. Every entry point returns a `Message`
 import datetime
 import logging
 import random
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, replace
 from typing import get_args
 
 from lunchbot.messages import Action, Icon, Mention, Message
@@ -75,8 +75,12 @@ class Bot:
 
     # -- commands ------------------------------------------------------------
 
-    def handle(self, text: str, user: str) -> Message:
-        """Run one command, e.g. "add restaurant holy hog", sent by `user`."""
+    def handle(self, text: str, user: str, mentions: Sequence[Mention] = ()) -> Message:
+        """Run one command, e.g. "add restaurant holy hog", sent by `user`.
+
+        Adapters replace @-mentions in `text` with the person's name and pass them
+        in `mentions`, so "add driver @jeremy" can store Jeremy's platform user ID.
+        """
         words = text.split()
         if words and words[0].lower() == "/lunchbot":
             words = words[1:]
@@ -91,7 +95,7 @@ class Bot:
             if command == "list":
                 return self._list(_list_name(args[0]))
             if command == "add":
-                return self._add(_list_name(args[0]), " ".join(args[1:]))
+                return self._add(_list_name(args[0]), " ".join(args[1:]), mentions)
             if command == "remove":
                 return self._remove(_list_name(args[0]), " ".join(args[1:]))
             if command in ("upvote", "downvote"):
@@ -120,11 +124,22 @@ class Bot:
         lines = "".join(f"{e.name}, {e.weight}\n" for e in entries)
         return Message.of(f"{list_name.upper()}, WEIGHT\n{lines}")
 
-    def _add(self, list_name: ListName, name: str) -> Message:
-        entry = Entry(normalize(name))
-        if self.store.add(list_name, entry):
-            return Message.of(f"{entry.name} added to {_singular(list_name)} list!")
-        return Message.of(f"{entry.name} already exists in {_singular(list_name)} list!")
+    def _add(self, list_name: ListName, name: str, mentions: Sequence[Mention] = ()) -> Message:
+        name = normalize(name)
+        ids: dict[str, str] = {}
+        if list_name == "drivers":
+            for m in mentions:
+                if normalize(m.name) == name:
+                    ids.update(m.ids)
+        if self.store.add(list_name, Entry(name, ids=ids)):
+            return Message.of(f"{name} added to {_singular(list_name)} list!")
+
+        # Adding an existing driver by @-mention links their account for mentions.
+        existing = self.store.find(list_name, name)
+        if existing is not None and {**existing.ids, **ids} != existing.ids:
+            self.store.update(list_name, replace(existing, ids={**existing.ids, **ids}))
+            return Message.of(f"{name} will now be @-mentioned when driving!")
+        return Message.of(f"{name} already exists in {_singular(list_name)} list!")
 
     def _remove(self, list_name: ListName, name: str) -> Message:
         name = normalize(name)

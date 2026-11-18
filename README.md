@@ -12,20 +12,23 @@
 
 A chat bot that picks where the team goes for lunch and who drives. Picks are weighted, and the team can vote restaurants up or down or veto a pick.
 
-lunchbot was built for HipChat, which shut down in 2019. The bot logic is now platform-neutral; Slack support is in progress ([#12](https://github.com/jesmith0/lunchbot/issues/12)). Until then you can try it in your terminal with `uv run lunchbot chat`.
+It runs in **Slack** (see [Slack setup](#slack-setup)), or in your terminal with `uv run lunchbot chat`. It was originally built for HipChat; see [History](#history).
 
 ## Commands
 
-Send these to the bot (`/lunchbot <command>` in chat, or just `<command>` in `lunchbot chat`):
+Send these with `/lunchbot <command>` in Slack, or just `<command>` in `lunchbot chat`:
 
 | Command | What it does |
 | --- | --- |
 | `/lunchbot list restaurants` / `/lunchbot list drivers` | Show a list with its weights |
 | `/lunchbot add restaurant <name>` / `/lunchbot add driver <name>` | Add an entry with weight 1 |
+| `/lunchbot add driver @someone` | Add a driver who gets @-mentioned when it's their turn. Also links an existing driver of the same name. |
 | `/lunchbot remove restaurant <name>` / `/lunchbot remove driver <name>` | Remove an entry |
 | `/lunchbot upvote <restaurant>` | Raise a restaurant's weight by 1 (max 10) |
 | `/lunchbot downvote <restaurant>` | Lower a restaurant's weight by 1 (min 1) |
 | `/lunchbot gross` | Vote to veto today's pick. Three votes re-roll it. |
+
+In Slack, the daily pick also has 👍 / 👎 / Gross buttons that do the same as the commands.
 
 ## Schedule
 
@@ -36,6 +39,13 @@ Send these to the bot (`/lunchbot <command>` in chat, or just `<command>` in `lu
 
 `lunchbot close-voting` closes voting and announces the final pick.
 
+With `LUNCHBOT_PLATFORM=slack`, both post to `LUNCHBOT_SLACK_CHANNEL`. For example, in crontab:
+
+```cron
+30 11 * * 1-5  cd /srv/lunchbot && uv run --env-file .env lunchbot post-lunch
+30 12 * * 1-5  cd /srv/lunchbot && uv run --env-file .env lunchbot close-voting
+```
+
 ## Layout
 
 | File | Purpose |
@@ -43,11 +53,12 @@ Send these to the bot (`/lunchbot <command>` in chat, or just `<command>` in `lu
 | `lunchbot/core.py` | Bot logic: commands, weighted picks, veto voting. Returns messages and never talks to a chat service. |
 | `lunchbot/messages.py` | Platform-neutral `Message`: text, mentions, an icon and buttons |
 | `lunchbot/storage.py` | Reads and writes the list files |
-| `lunchbot/adapters/` | One module per chat platform, rendering messages for it. `console.py` is the terminal. |
+| `lunchbot/adapters/` | One module per chat platform: `slack.py`, and `console.py` for the terminal |
 | `lunchbot/cli.py` | The `lunchbot` command |
 | `lunchbot/config.py` | Settings read from environment variables |
 | `lunchbot/web.py`, `lunchbot.wsgi` | Flask app and its mod_wsgi entry point |
-| `data/restaurants.txt`, `data/drivers.txt` | Lists in `NAME, WEIGHT` format |
+| `slack/manifest.yml` | Slack app manifest |
+| `data/restaurants.txt`, `data/drivers.txt` | Lists in `NAME, WEIGHT` format. Drivers may also have a Slack user ID: `NAME, WEIGHT, slack:U0123ABC`. |
 | `data/vetos.txt` | Current veto votes, or `DISABLED` |
 
 ## Configuration
@@ -57,6 +68,22 @@ All settings come from environment variables. Copy `.env.example` to `.env`, fil
 | Variable | Purpose |
 | --- | --- |
 | `LUNCHBOT_DATA_DIR` | Folder holding the list files. Defaults to `data/` in this repo. |
+| `LUNCHBOT_PLATFORM` | Where `post-lunch` and `close-voting` post: `console` (default) or `slack` |
+| `SLACK_BOT_TOKEN` | Bot token (`xoxb-...`) from **OAuth & Permissions** |
+| `LUNCHBOT_SLACK_CHANNEL` | Channel ID for the daily post, e.g. `C0123ABC` |
+| `SLACK_APP_TOKEN` | Socket Mode only: app-level token (`xapp-...`) with `connections:write` |
+| `SLACK_SIGNING_SECRET` | HTTP mode only: **Signing Secret** from **Basic Information**. Setting it turns on `/slack/events`. |
+
+## Slack setup
+
+1. At [api.slack.com/apps](https://api.slack.com/apps), choose **Create New App → From an app manifest**, pick your workspace, and paste [`slack/manifest.yml`](slack/manifest.yml).
+2. **Install to Workspace**, then copy the **Bot User OAuth Token** into `SLACK_BOT_TOKEN`.
+3. Under **Basic Information → App-Level Tokens**, generate a token with the `connections:write` scope and put it in `SLACK_APP_TOKEN`.
+4. Invite the bot to your lunch channel (`/invite @lunchbot`) and put the channel's ID in `LUNCHBOT_SLACK_CHANNEL`. The ID is at the bottom of the channel's details.
+5. Run `uv run --env-file .env lunchbot serve` and try `/lunchbot list restaurants`.
+6. Set `LUNCHBOT_PLATFORM=slack` and schedule `post-lunch` and `close-voting` (see [Schedule](#schedule)).
+
+Socket Mode connects out to Slack, so the bot can run anywhere, even behind a firewall. To receive requests over HTTP instead, serve `lunchbot.wsgi` at a public HTTPS URL, set `SLACK_SIGNING_SECRET`, and follow the HTTP notes at the top of the manifest. Requests are checked against the signing secret; unsigned ones are rejected.
 
 ## History
 

@@ -7,6 +7,7 @@ license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "flask>=3.1",
+    "slack-bolt>=1.21",
 ]
 
 [project.optional-dependencies]

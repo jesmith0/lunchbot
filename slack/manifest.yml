@@ -1,0 +1,33 @@
+# Slack app manifest for lunchbot. Create the app at https://api.slack.com/apps
+# with "From an app manifest" and paste this file. See "Slack setup" in the README.
+#
+# This uses Socket Mode (`lunchbot serve`), which needs no public URL. For HTTP
+# mode instead, set socket_mode_enabled to false and add
+#   url: https://YOUR-HOST/slack/events          (under the slash command)
+#   request_url: https://YOUR-HOST/slack/events  (under interactivity)
+display_information:
+  name: lunchbot
+  description: Picks where the team goes for lunch and who drives
+  background_color: "#3d3d3d"
+features:
+  bot_user:
+    display_name: lunchbot
+    always_online: true
+  slash_commands:
+    - command: /lunchbot
+      description: Lunch lists, votes and vetoes
+      usage_hint: "list restaurants | add driver @someone | upvote <restaurant> | gross"
+      # Send @-mentions as user IDs, so `add driver @someone` can mention them later
+      should_escape: true
+oauth_config:
+  scopes:
+    bot:
+      - commands     # /lunchbot
+      - chat:write   # post the daily lunch
+      - users:read   # display names for `add driver @someone`
+settings:
+  interactivity:
+    is_enabled: true
+  org_deploy_enabled: false
+  socket_mode_enabled: true
+  token_rotation_enabled: false
