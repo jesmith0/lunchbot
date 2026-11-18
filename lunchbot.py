@@ -289,35 +289,39 @@ def __get_list_msg(name):
 
 
 ### RETURNS A RANDOM ITEM FROM A LIST
-def __get_random_item(path, last_item_file=None):
-    f = open(path)
+# If last_item_file is given, the last `avoid_last` picks recorded there are
+# excluded from the draw (unless that would leave nothing to pick from).
+def __get_random_item(path, last_item_file=None, avoid_last=1):
+    recent = []
+    if last_item_file is not None and avoid_last > 0:
+        try:
+            with open(last_item_file) as f:
+                recent = [ln.strip().upper() for ln in f if ln.strip()][-avoid_last:]
+        except OSError:
+            recent = []
+
     arr = []
+    allowed = []
+    with open(path) as f:
+        for line in f:
+            # first item is restaurant, second is weight
+            split_line = line.split(",")
 
-    # Check for previous item
-    # last_item = __get_lines(last_item_file)[0] if last_item_file is not None else None
+            restaurant = split_line[0]
+            weight = int(split_line[1])
 
-    for line in f:
-        # first item is restaurant, second is weight
-        split_line = line.split(",")
+            allowed.extend([restaurant] * weight)
+            if restaurant.strip().upper() not in recent:
+                arr.extend([restaurant] * weight)
 
-        restaurant = split_line[0]
-        weight = split_line[1]
+    choice = random.choice(arr or allowed).strip().upper()
 
-        # add restaurant to list "weight" times if not
-        # previously chosen item
-        # if restaurant != last_item:
-        for _i in range(0, int(weight)):
-            arr.append(restaurant)
+    # Record this pick, keeping only the last `avoid_last` entries
+    if last_item_file is not None and avoid_last > 0:
+        history = (recent + [choice])[-avoid_last:]
+        __write_lines(last_item_file, [h + "\n" for h in history])
 
-    f.close()
-
-    # choice = (arr[random.randrange(0, len(arr))]).split(',')
-    choice = random.choice(arr)
-
-    # Write this item to the last file
-    # __write_lines(last_item_file, choice[0])
-
-    return choice.strip().upper()
+    return choice
 
 
 ### POSTS MESSAGE TO HIPCHAT

@@ -1,4 +1,5 @@
 import os
+import random
 
 import pytest
 
@@ -123,6 +124,32 @@ def test_random_item_respects_weights(env):
         f.write("ONLY ONE, 3\nNEVER, 0\n")
     for _ in range(20):
         assert get_random_item(lunchbot.REST_PATH) == "ONLY ONE"
+
+
+def test_random_item_avoids_last_pick_and_records(env):
+    random.seed(1)
+    previous = None
+    for _ in range(30):
+        pick = get_random_item(lunchbot.REST_PATH, lunchbot.LAST_REST_PATH)
+        assert pick != previous
+        assert env.read("LAST_REST_PATH").strip() == pick
+        previous = pick
+
+
+def test_random_item_avoid_last_n(env):
+    random.seed(2)
+    with open(lunchbot.REST_PATH, "w") as f:
+        f.write("A, 1\nB, 1\nC, 1\n")
+    picks = [get_random_item(lunchbot.REST_PATH, lunchbot.LAST_REST_PATH, 2) for _ in range(30)]
+    for i in range(2, len(picks)):
+        assert picks[i] not in picks[i - 2 : i]
+
+
+def test_random_item_falls_back_when_all_excluded(env):
+    with open(lunchbot.REST_PATH, "w") as f:
+        f.write("ONLY, 1\n")
+    for _ in range(3):
+        assert get_random_item(lunchbot.REST_PATH, lunchbot.LAST_REST_PATH) == "ONLY"
 
 
 @pytest.mark.parametrize(
