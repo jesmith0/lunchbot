@@ -1,6 +1,7 @@
 import datetime
 import logging
 import random
+from pathlib import Path
 from typing import TypedDict
 
 import requests
@@ -11,6 +12,7 @@ REST_PATH = "/var/www/html/lunchbot/restaurants.txt"
 DRIVER_PATH = "/var/www/html/lunchbot/drivers.txt"
 VETO_PATH = "/var/www/html/lunchbot/vetos.txt"
 LAST_DRIVER_PATH = "/var/www/html/lunchbot/driver_last.txt"
+RESTAURANT_HISTORY_SIZE = 1
 LAST_REST_PATH = "/var/www/html/lunchbot/restaurant_last.txt"
 SANDBOX_URL_PATH = "/var/www/html/lunchbot/SANDBOX_URL.txt"
 TFA_URL_PATH = "/home/ubuntu/PRIVATE/TFA_URL.txt"
@@ -278,30 +280,31 @@ def _get_list_msg(name: str) -> str:
 
 ### RETURNS A RANDOM ITEM FROM A LIST
 def _get_random_item(path: str, last_item_file: str | None = None) -> str:
-    arr: list[str] = []
+    candidates = []
+    with open(path) as source:
+        for line in source:
+            restaurant, weight = line.split(",")[:2]
+            candidates.extend([restaurant.strip().upper()] * int(weight))
 
-    # Check for previous item
-    # last_item = _get_lines(last_item_file)[0] if last_item_file is not None else None
+    history = []
+    if last_item_file is not None and RESTAURANT_HISTORY_SIZE > 0:
+        history_path = Path(last_item_file)
+        try:
+            history = [
+                name.strip().upper()
+                for name in history_path.read_text().splitlines()
+                if name.strip()
+            ][-RESTAURANT_HISTORY_SIZE:]
+        except FileNotFoundError:
+            pass
 
-    with open(path) as f:
-        for line in f:
-            # first item is restaurant, second is weight
-            split_line = line.split(",")
+        recent = set(history)
+        eligible = [item for item in candidates if item not in recent]
+        choice = random.choice(eligible or candidates)
+        history_path.write_text("\n".join((history + [choice])[-RESTAURANT_HISTORY_SIZE:]) + "\n")
+        return choice
 
-            restaurant = split_line[0]
-            weight = split_line[1]
-
-            # add restaurant to list "weight" times if not
-            # previously chosen item
-            # if restaurant != last_item:
-            arr.extend([restaurant] * int(weight))
-
-    choice = random.choice(arr)
-
-    # Write this item to the last file
-    # _write_lines(last_item_file, choice[0])
-
-    return choice.strip().upper()
+    return random.choice(candidates)
 
 
 ### POSTS MESSAGE TO HIPCHAT

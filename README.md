@@ -30,6 +30,9 @@ Send these in a HipChat room with the bot installed:
 `python lunchbot.py` posts the day's lunch. Run it on a schedule, for example with cron.
 
 - **Mon / Wed / Fri:** a weighted random restaurant and driver. On Fridays it sometimes picks the tech talk instead.
+  Restaurant draws avoid the most recent pick when another weighted option exists.
+  Set `RESTAURANT_HISTORY_SIZE` in `lunchbot.py` to keep more picks, or set it to 0 to disable history.
+  The bot stores recent picks in `restaurant_last.txt`, which must be writable.
 - **Tue:** knowledge lunch. **Thu:** logic puzzle group.
 
 `python disable_veto.py` closes voting and announces the final pick.

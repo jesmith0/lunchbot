@@ -193,3 +193,22 @@ def test_file_errors_are_logged(env, caplog):
     assert lunchbot._get_lines("/nonexistent/lunchbot.txt") is None
     assert "Could not read file /nonexistent/lunchbot.txt" in caplog.text
     assert "FileNotFoundError" in caplog.text
+
+
+def test_restaurant_history_excludes_recent_picks_and_falls_back(tmp_path, monkeypatch):
+    from random import Random
+
+    restaurants = tmp_path / "restaurants.txt"
+    restaurants.write_text("Alpha, 5\nBeta, 1\n")
+    history = tmp_path / "recent.txt"
+    monkeypatch.setattr(lunchbot.random, "choice", Random(4).choice)
+    monkeypatch.setattr(lunchbot, "RESTAURANT_HISTORY_SIZE", 2, raising=False)
+
+    first = get_random_item(restaurants, history)
+    second = get_random_item(restaurants, history)
+    assert {first, second} == {"ALPHA", "BETA"}
+    assert history.read_text().splitlines() == [first, second]
+
+    third = get_random_item(restaurants, history)
+    assert third in {"ALPHA", "BETA"}
+    assert history.read_text().splitlines() == [second, third]
