@@ -2,7 +2,7 @@
 
 # lunchbot
 
-[![CI](https://github.com/jesmith0/lunchbot/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jesmith0/lunchbot/actions/workflows/ci.yml)
+[![CI](https://github.com/jesmith0/lunchbot/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jesmith0/lunchbot/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-2.7%20%7C%203.12-blue?logo=python&logoColor=white)
 ![Tested with pytest](https://img.shields.io/badge/tested%20with-pytest-0A9EDC?logo=pytest&logoColor=white)
 ![Flask](https://img.shields.io/badge/flask-backend-000000?logo=flask&logoColor=white)
