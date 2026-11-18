@@ -1,4 +1,4 @@
-<p align="center"><img src="static/lunchbot.png" alt="lunchbot" width="200"></p>
+<p align="center"><img src="lunchbot/static/lunchbot.png" alt="lunchbot" width="200"></p>
 
 # lunchbot
 
@@ -10,11 +10,13 @@
 ![Last commit](https://img.shields.io/github/last-commit/jesmith0/lunchbot)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-A HipChat bot that picks where the team goes for lunch and who drives. Picks are weighted, and the team can vote restaurants up or down or veto a pick.
+A chat bot that picks where the team goes for lunch and who drives. Picks are weighted, and the team can vote restaurants up or down or veto a pick.
+
+lunchbot was built for HipChat, which shut down in 2019. The bot logic is now platform-neutral; Slack support is in progress ([#12](https://github.com/jesmith0/lunchbot/issues/12)). Until then you can try it in your terminal with `uv run lunchbot chat`.
 
 ## Commands
 
-Send these in a HipChat room with the bot installed:
+Send these to the bot (`/lunchbot <command>` in chat, or just `<command>` in `lunchbot chat`):
 
 | Command | What it does |
 | --- | --- |
@@ -27,32 +29,33 @@ Send these in a HipChat room with the bot installed:
 
 ## Schedule
 
-`python lunchbot.py` posts the day's lunch. Run it on a schedule, for example with cron.
+`lunchbot post-lunch` posts the day's lunch. Run it on a schedule, for example with cron.
 
-- **Mon / Wed / Fri:** a weighted random restaurant and driver. On Fridays it sometimes picks the tech talk instead.
-- **Tue:** knowledge lunch. **Thu:** logic puzzle group.
+- **Mon / Wed / Fri:** a weighted random restaurant and driver, with buttons to vote or veto. On Fridays it sometimes picks the tech talk instead.
+- **Tue:** knowledge lunch. **Thu:** logic puzzle group. Nothing on weekends.
 
-`python disable_veto.py` closes voting and announces the final pick.
+`lunchbot close-voting` closes voting and announces the final pick.
 
 ## Layout
 
 | File | Purpose |
 | --- | --- |
-| `lunchbot.py` | Command handling, weighted picks, posting to the chat webhook |
-| `config.py` | Settings read from environment variables |
-| `backend.py` | Flask app that receives chat webhooks at `/lunchbot` |
-| `lunchbot.wsgi` | mod_wsgi entry point |
+| `lunchbot/core.py` | Bot logic: commands, weighted picks, veto voting. Returns messages and never talks to a chat service. |
+| `lunchbot/messages.py` | Platform-neutral `Message`: text, mentions, an icon and buttons |
+| `lunchbot/storage.py` | Reads and writes the list files |
+| `lunchbot/adapters/` | One module per chat platform, rendering messages for it. `console.py` is the terminal. |
+| `lunchbot/cli.py` | The `lunchbot` command |
+| `lunchbot/config.py` | Settings read from environment variables |
+| `lunchbot/web.py`, `lunchbot.wsgi` | Flask app and its mod_wsgi entry point |
 | `data/restaurants.txt`, `data/drivers.txt` | Lists in `NAME, WEIGHT` format |
 | `data/vetos.txt` | Current veto votes, or `DISABLED` |
 
 ## Configuration
 
-All settings come from environment variables. Copy `.env.example` to `.env`, fill it in, and run with `uv run --env-file .env ...`. Never commit `.env`: webhook URLs contain auth tokens.
+All settings come from environment variables. Copy `.env.example` to `.env`, fill it in, and run with `uv run --env-file .env ...`. Never commit `.env`: it holds chat tokens.
 
 | Variable | Purpose |
 | --- | --- |
-| `LUNCHBOT_WEBHOOK_URL` | Webhook the bot posts to. Required before the bot can post anything. |
-| `LUNCHBOT_ROOM_WEBHOOKS` | Optional JSON object of room name → webhook URL, for rooms that post somewhere else |
 | `LUNCHBOT_DATA_DIR` | Folder holding the list files. Defaults to `data/` in this repo. |
 
 ## History
@@ -75,11 +78,14 @@ Requires Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
 
 ```sh
 uv sync --extra dev        # create .venv from uv.lock
+uv run lunchbot chat       # talk to the bot in your terminal
 uv run pytest              # tests
 uv run ruff check .        # lint
 uv run ruff format .       # format
 uv run mypy                # type check (strict)
 ```
+
+To add a chat platform, write an adapter in `lunchbot/adapters/` that sends `Message`s and passes incoming command text to `Bot.handle`. The core shouldn't need to change; a test fails if it imports HTTP or chat libraries.
 
 After changing dependencies in `pyproject.toml`, run `uv lock` and commit `uv.lock`.
 
