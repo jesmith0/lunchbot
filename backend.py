@@ -9,12 +9,12 @@ app.config.update(PROPAGATE_EXCEPTIONS=True)
 
 
 @app.route("/")
-def index():
+def index() -> str:
     return render_template("index.html")
 
 
 @app.route("/lunchbot", methods=["GET", "POST"])
-def lunchbot():
+def lunchbot() -> str | tuple[str, int]:
     # process message from hipchat
     if request.method == "POST":
         try:
